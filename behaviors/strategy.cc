@@ -14,7 +14,7 @@ SkillType NaoBehavior::selectSkill()
 {
 
      VecPosition goal1 = VecPosition(3, 3, 0);//xie bu liao zhu shi !
-    VecPosition goal2 = VecPosition(3, 4, 0);//zen me da zhong wen ?
+    VecPosition goal2 = VecPosition(3, 4, 0);//zen me da zhong wen !
     VecPosition goal3 = VecPosition(HALF_FIELD_X, 0, 0);
     VecPosition temp;
     bool s1=true;
