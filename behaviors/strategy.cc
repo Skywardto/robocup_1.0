@@ -1,74 +1,143 @@
 #include "naobehavior.h"
 #include "../rvdraw/rvdraw.h"
 
-extern int agentBodyType;
+#include<algorithm>//quick sort
 
 void NaoBehavior::beam( double& beamX, double& beamY, double& beamAngle ) {
     beamX = -HALF_FIELD_X + worldModel->getUNum();
     beamY = 0;
     beamAngle = 0;
 }
+struct Min
+{
+   double distance;
+   int num;
+}leftMin[4],topMin[4],downMin[4],rightMin[4];
 
-
+bool cmp (Min a ,Min b)
+{
+    if(a.distance>=b.distance)
+    {
+        return false;
+    }
+    else 
+    {
+        return true;
+    }
+}
 SkillType NaoBehavior::selectSkill() 
 {
 
-     VecPosition goal1 = VecPosition(3, 3, 0);//xie bu liao zhu shi !
-    VecPosition goal2 = VecPosition(3, 4, 0);//zen me da zhong wen !
-    VecPosition goal3 = VecPosition(HALF_FIELD_X, 0, 0);
+    VecPosition goalLeft = ball+VecPosition(-0.5,0,0);
+    VecPosition goalTop = ball+VecPosition(0,1,0);
+    VecPosition goalDown = ball+VecPosition(0,-1,0);
+    VecPosition goalRight = ball+VecPosition(4,0,0);
     VecPosition temp;
-    bool s1=true;
-    double distance;
-
-    for(int i=WO_TEAMMATE1;i<WO_TEAMMATE1+2;++i)
+    bool isFallen;
+    
+    for(int i=WO_TEAMMATE1;i<WO_TEAMMATE1+4;++i)
     {
-        VecPosition temp;
-        int playerNum = i - WO_TEAMMATE1 + 1;
-        if (worldModel->getUNum() == 2) {
-            // This is us
-            temp = worldModel->getMyPosition();
-        } else {
-            WorldObject* teammate = worldModel->getWorldObject( i );
-            if (teammate->validPosition) {
-                temp = teammate->pos;
-            } else {
-                continue;
+       
+        if (worldModel->getUNum() == i) 
+        {
+             isFallen=worldModel->isFallen();
+             leftMin[i-1].num=i;
+             topMin[i-1].num=i;
+              downMin[i-1].num=i;
+               rightMin[i-1].num=i;
+            leftMin[i-1].distance=me.getDistanceTo(goalLeft)+isFallen;
+             topMin[i-1].distance=me.getDistanceTo(goalTop)+isFallen;
+              downMin[i-1].distance=me.getDistanceTo(goalDown)+isFallen;
+               rightMin[i-1].distance=me.getDistanceTo(goalRight)+isFallen;
+        } 
+        else 
+        {
+            WorldObject* teammate = worldModel->getWorldObject(i);
+          
+        if (teammate->validPosition) 
+            {
+            isFallen=worldModel->getFallenTeammate(i);
+            temp=teammate->pos;
+            leftMin[i-1].num=i;
+             topMin[i-1].num=i;
+              downMin[i-1].num=i;
+               rightMin[i-1].num=i;
+            leftMin[i-1].distance=temp.getDistanceTo(goalLeft)+isFallen;
+             topMin[i-1].distance=temp.getDistanceTo(goalTop)+isFallen;
+              downMin[i-1].distance=temp.getDistanceTo(goalDown)+isFallen;
+               rightMin[i-1].distance=temp.getDistanceTo(goalRight)+isFallen;
+            }
+        else 
+            {
+            continue;      
             }
         }
-        temp.setZ(0);
-        double distanceToBall = temp.getDistanceTo(ball);
-        if (distanceToBall >1.5) 
-        {
-            s1=true; 
-        }
-        else
-        {
-            s1=false;
-        }
     }
-    if(WO_TEAMMATE1 == worldModel->getUNum())
+    sort(leftMin,leftMin+4,cmp);
+    sort(topMin,topMin+4,cmp);
+    sort(downMin,downMin+4,cmp);
+    sort(rightMin,rightMin+4,cmp);
+
+    int num[4]{};
+    num[0]=leftMin[0].num;
+    int i=0,j=0;
+
+    if(num[0]==topMin[0].num)
     {
-        if(s1)
-        {
-            return kickBall(KICK_IK,goal1);
-        }
-           else
-           return SKILL_STAND;
-    }   
+        num[1]=topMin[1].num;
+    }
     else
     {
-        if(!s1)
-           {
-            return kickBall(KICK_DRIBBLE,goal3);
-           }
+        num[1]=topMin[0].num;
+    }
+
+    for(;i<3&&j<3;)
+    {
+        if(num[i]==downMin[j].num)
+            {
+                j++;
+                i++;
+            }
+            else i++;
+    }
+    num[2]=downMin[j].num;
+    i=0;
+    j=0;
+    for(;i<4&&j<4;)
+    {
+        if(num[i]==rightMin[j].num)
+            {
+                j++;
+                i++;
+            }
+            else i++;
+    }
+    num[3]=rightMin[j].num;
+
+
+        if(worldModel->getUNum()==num[0])
+        {
+            VecPosition target = collisionAvoidance(true /*teammate*/, false/*opponent*/, true/*ball*/, 1/*proximity thresh*/, .5/*collision thresh*/, goalLeft, true/*keepDistance*/);
+        return goToTarget(target);
+        }
+        else if (worldModel->getUNum()==num[1])
+        {
+           VecPosition target = collisionAvoidance(true /*teammate*/, false/*opponent*/, true/*ball*/, 1/*proximity thresh*/, .5/*collision thresh*/, goalTop, true/*keepDistance*/);
+        return goToTarget(target);
+        }
+        else if(worldModel->getUNum()==num[2])
+        {
+            VecPosition target = collisionAvoidance(true /*teammate*/, false/*opponent*/, true/*ball*/, 1/*proximity thresh*/, .5/*collision thresh*/, goalDown, true/*keepDistance*/);
+        return goToTarget(target);
+        }
         else
         {
-        goal2 = collisionAvoidance(true /*teammate*/, false/*opponent*/, true/*ball*/, 1/*proximity thresh*/, .5/*collision thresh*/, goal2, true/*keepDistance*/);
-        return goToTarget(goal2);
+            VecPosition target = collisionAvoidance(true /*teammate*/, false/*opponent*/, true/*ball*/, 1/*proximity thresh*/, .5/*collision thresh*/, goalRight, true/*keepDistance*/);
+        return goToTarget(target);
         }
- 
-    }
 }
+   
+
 
 
 
