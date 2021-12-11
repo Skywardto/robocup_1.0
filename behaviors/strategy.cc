@@ -16,14 +16,7 @@ struct Min
 
 bool cmp (Min a ,Min b)
 {
-    if(a.distance>=b.distance)
-    {
-        return false;
-    }
-    else 
-    {
-        return true;
-    }
+    return a.distance<b.distance;
 }
 SkillType NaoBehavior::selectSkill() 
 {
@@ -33,6 +26,7 @@ SkillType NaoBehavior::selectSkill()
     VecPosition goalDown = ball+VecPosition(0,-1,0);
     VecPosition goalRight = ball+VecPosition(4,0,0);
     VecPosition temp;
+
     bool isFallen;
     
     for(int i=WO_TEAMMATE1;i<WO_TEAMMATE1+4;++i)
@@ -40,8 +34,9 @@ SkillType NaoBehavior::selectSkill()
        
         if (worldModel->getUNum() == i) 
         {
-             isFallen=worldModel->isFallen();
-             leftMin[i-1].num=i;
+            isFallen=worldModel->isFallen();
+
+            leftMin[i-1].num=i;
              topMin[i-1].num=i;
               downMin[i-1].num=i;
                rightMin[i-1].num=i;
@@ -58,6 +53,7 @@ SkillType NaoBehavior::selectSkill()
             {
             isFallen=worldModel->getFallenTeammate(i);
             temp=teammate->pos;
+
             leftMin[i-1].num=i;
              topMin[i-1].num=i;
               downMin[i-1].num=i;
@@ -73,6 +69,7 @@ SkillType NaoBehavior::selectSkill()
             }
         }
     }
+
     sort(leftMin,leftMin+4,cmp);
     sort(topMin,topMin+4,cmp);
     sort(downMin,downMin+4,cmp);
@@ -80,6 +77,7 @@ SkillType NaoBehavior::selectSkill()
 
     int num[4]{};
     num[0]=leftMin[0].num;
+
     int i=0,j=0;
 
     if(num[0]==topMin[0].num)
@@ -117,21 +115,33 @@ SkillType NaoBehavior::selectSkill()
 
         if(worldModel->getUNum()==num[0])
         {
+            worldModel->getRVSender()->clearStaticDrawings();
+            worldModel->getRVSender()->drawPoint(goalLeft.getX(), goalLeft.getY(), 10, RVSender::RED);
+            worldModel->getRVSender()->drawText("first",me.getX(), me.getY(),  RVSender::BLUE);//dynamic drawing points
             VecPosition target = collisionAvoidance(true /*teammate*/, false/*opponent*/, true/*ball*/, 1/*proximity thresh*/, .5/*collision thresh*/, goalLeft, true/*keepDistance*/);
         return goToTarget(target);
         }
         else if (worldModel->getUNum()==num[1])
         {
+            worldModel->getRVSender()->clearStaticDrawings();
+            worldModel->getRVSender()->drawPoint(goalTop.getX(), goalTop.getY(), 10, RVSender::YELLOW);
+            worldModel->getRVSender()->drawText("second",me.getX(), me.getY(),  RVSender::BLUE);//dynamic drawing points
            VecPosition target = collisionAvoidance(true /*teammate*/, false/*opponent*/, true/*ball*/, 1/*proximity thresh*/, .5/*collision thresh*/, goalTop, true/*keepDistance*/);
         return goToTarget(target);
         }
         else if(worldModel->getUNum()==num[2])
         {
+            worldModel->getRVSender()->clearStaticDrawings();
+            worldModel->getRVSender()->drawPoint(goalDown.getX(), goalDown.getY(), 10, RVSender::BLUE);
+            worldModel->getRVSender()->drawText("third",me.getX(), me.getY(),  RVSender::BLUE);//dynamic drawing points
             VecPosition target = collisionAvoidance(true /*teammate*/, false/*opponent*/, true/*ball*/, 1/*proximity thresh*/, .5/*collision thresh*/, goalDown, true/*keepDistance*/);
         return goToTarget(target);
         }
-        else
+        else if(worldModel->getUNum()==num[3])
         {
+            worldModel->getRVSender()->clearStaticDrawings();
+            worldModel->getRVSender()->drawPoint(goalRight.getX(), goalRight.getY(), 10, RVSender::GREEN);
+            worldModel->getRVSender()->drawText("forth",me.getX(), me.getY(),  RVSender::BLUE);//dynamic drawing points
             VecPosition target = collisionAvoidance(true /*teammate*/, false/*opponent*/, true/*ball*/, 1/*proximity thresh*/, .5/*collision thresh*/, goalRight, true/*keepDistance*/);
         return goToTarget(target);
         }
